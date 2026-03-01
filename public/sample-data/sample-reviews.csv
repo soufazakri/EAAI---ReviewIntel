@@ -1,0 +1,151 @@
+review_text,rating,review_date,platform,reviewer_name,reviewer_role,product_name,review_url
+"The UI is incredibly easy to navigate and train our staff on. However, the reporting features are too basic for our growing needs.",4,2024-01-15,G2,Sarah Jenkins,HR Manager,BambooHR,https://g2.com/reviews/bbhr1
+"We love BambooHR for its user-friendly interface. I just wish it integrated better with our customized ATS.",4,2024-02-10,Capterra,David Chen,VP of People,BambooHR,https://capterra.com/reviews/bbhr2
+"Onboarding is a breeze with this system. But creating custom reports takes way too much manual effort.",3,2024-03-05,TrustRadius,Maria Garcia,Payroll Admin,BambooHR,https://trustradius.com/reviews/bbhr3
+"Clean UX but lacking deep analytics. We are considering switching to Workday for better enterprise features.",3,2024-04-12,GetApp,James Wilson,HR Director,BambooHR,https://getapp.com/reviews/bbhr4
+"Support is good and the platform is highly intuitive. Integrations with our existing tech stack are unfortunately almost non-existent.",4,2024-05-20,G2,Aisha Patel,CEO,BambooHR,https://g2.com/reviews/bbhr5
+"It is wonderfully simple for our small team. I miss the complex features of ADP sometimes though.",4,2024-06-18,Capterra,Michael Smith,COO,BambooHR,https://capterra.com/reviews/bbhr6
+"Too simple for us now as we scale. Evaluating alternatives because we've simply outgrown its capabilities.",2,2024-07-22,TrustRadius,Emily Davis,People Ops Lead,BambooHR,https://trustradius.com/reviews/bbhr7
+"BambooHR handles our basic needs perfectly. The UI is clean, but reporting is definitely its weak point.",4,2024-08-11,GetApp,Robert Taylor,Recruiter,BambooHR,https://getapp.com/reviews/bbhr8
+"Great for maintaining employee files securely. Wish the third-party integrations were more seamless.",3,2024-09-09,G2,Linda Martinez,Office Manager,BambooHR,https://g2.com/reviews/bbhr9
+"The interface is very inviting for new hires. We struggle with getting advanced data cuts out of the system, however.",4,2024-10-14,Capterra,William Brown,CHRO,BambooHR,https://capterra.com/reviews/bbhr10
+"Very easy to use UI that our team loves. Reporting is limited though, which creates extra spreadsheet work for me.",4,2024-11-03,TrustRadius,Jessica Taylor,HR Manager,BambooHR,https://trustradius.com/reviews/bbhr11
+"Love the interface and how modern it feels. Wish the integrations were stronger with our accounting software.",4,2024-12-01,GetApp,Brian White,VP of People,BambooHR,https://getapp.com/reviews/bbhr12
+"BambooHR is great for onboarding new employees. Custom reports are a pain to configure correctly.",3,2025-01-15,G2,Nancy Green,Payroll Admin,BambooHR,https://g2.com/reviews/bbhr13
+"Clean UX but lacking deep analytics out of the box. We are considering switching to Workday for better scale.",3,2025-02-10,Capterra,Kevin Black,HR Director,BambooHR,https://capterra.com/reviews/bbhr14
+"Support is good and the platform is intuitive. Integrations with our tech stack are non-existent which is frustrating.",3,2025-03-08,TrustRadius,Laura Hall,CEO,BambooHR,https://trustradius.com/reviews/bbhr15
+"Simple for our small team to manage PTO. I miss the complex features of ADP sometimes though when doing payroll.",4,2025-04-12,GetApp,Steven Adams,COO,BambooHR,https://getapp.com/reviews/bbhr16
+"Too simple for us now after our recent merger. Evaluating alternatives because we've outgrown it entirely.",2,2025-05-19,G2,Rachel Nelson,People Ops Lead,BambooHR,https://g2.com/reviews/bbhr17
+"The easiest HR software I've ever used. Just don't expect it to handle complex custom data fields well.",4,2025-06-25,Capterra,Thomas King,Recruiter,BambooHR,https://capterra.com/reviews/bbhr18
+"Great aesthetic and user experience. Reporting limitations are becoming a dealbreaker for our executive team.",3,2025-07-30,TrustRadius,Susan Wright,Office Manager,BambooHR,https://trustradius.com/reviews/bbhr19
+"Onboarding is fantastic and automated. Integrating with our benefits provider has been a massive headache.",3,2024-01-22,GetApp,Daniel Scott,CHRO,BambooHR,https://getapp.com/reviews/bbhr20
+"We adopted BambooHR for its straightforward UI. The reporting module feels like an afterthought.",4,2024-02-28,G2,Michelle Baker,HR Manager,BambooHR,https://g2.com/reviews/bbhr21
+"Excellent for tracking time off and basic info. I wish the integrations were as good as Rippling's.",4,2024-03-15,Capterra,Paul Gonzalez,VP of People,BambooHR,https://capterra.com/reviews/bbhr22
+"BambooHR is solid for small business HR. Custom reports are incredibly frustrating to build and export.",3,2024-04-20,TrustRadius,Karen Perez,Payroll Admin,BambooHR,https://trustradius.com/reviews/bbhr23
+"Very clean UX that requires zero training. We are considering switching to Workday to consolidate our systems.",3,2024-05-11,GetApp,Mark Carter,HR Director,BambooHR,https://getapp.com/reviews/bbhr24
+"Support team is helpful and the platform is intuitive. Integrations are severely lacking compared to competitors.",3,2024-06-05,G2,Lisa Roberts,CEO,BambooHR,https://g2.com/reviews/bbhr25
+"Simple and effective for our startup. I miss the complex compliance features of ADP sometimes though.",4,2024-07-18,Capterra,Jason Mitchell,COO,BambooHR,https://capterra.com/reviews/bbhr26
+"It was great when we were 50 people. Evaluating alternatives because we've outgrown it at 300 employees.",2,2024-08-22,TrustRadius,Amanda Phillips,People Ops Lead,BambooHR,https://trustradius.com/reviews/bbhr27
+"The UI is its biggest selling point. Reporting is basically non-existent if you need advanced metrics.",3,2024-09-14,GetApp,Matthew Evans,Recruiter,BambooHR,https://getapp.com/reviews/bbhr28
+"Great for storing documents and basic employee data. Wish the API integrations were easier to implement.",4,2024-10-09,G2,Donna Turner,Office Manager,BambooHR,https://g2.com/reviews/bbhr29
+"Employees love the mobile app. As an admin, I find the reporting features severely lacking.",4,2024-11-20,Capterra,Anthony Collins,CHRO,BambooHR,https://capterra.com/reviews/bbhr30
+"The easiest platform to launch. However, the reporting features are too basic for our growing needs.",4,2024-12-15,TrustRadius,Sandra Edwards,HR Manager,BambooHR,https://trustradius.com/reviews/bbhr31
+"We love BambooHR for its user-friendly interface. I just wish it integrated better with our payroll provider.",4,2025-01-25,GetApp,Andrew Stewart,VP of People,BambooHR,https://getapp.com/reviews/bbhr32
+"Terrible reporting capabilities. Considering leaving because we simply cannot get the data we need.",1,2025-02-14,G2,Betty Flores,Payroll Admin,BambooHR,https://g2.com/reviews/bbhr33
+"The UI is nice but that is about it. The lack of integrations is forcing us to churn.",1,2025-03-22,Capterra,Joshua Morris,HR Director,BambooHR,https://capterra.com/reviews/bbhr34
+"Outgrown the platform entirely. It is too basic and we are actively evaluating Workday as a replacement.",2,2025-04-30,TrustRadius,Ashley Nguyen,CEO,BambooHR,https://trustradius.com/reviews/bbhr35
+"Unmatched enterprise features that handle everything we need. Implementation took forever though and was very painful.",4,2024-01-10,G2,Christopher Murphy,HR Manager,Workday,https://g2.com/reviews/wd1
+"Incredibly powerful platform for global teams. It is very complex to learn and train managers on.",4,2024-02-15,Capterra,Margaret Rivera,VP of People,Workday,https://capterra.com/reviews/wd2
+"Great for large scale HR operations. The UX is a bit dated and hard to navigate for standard users.",3,2024-03-20,TrustRadius,George Cook,Payroll Admin,Workday,https://trustradius.com/reviews/wd3
+"Everything is in one place which is great. Compared to BambooHR, the UI is very clunky and rigid.",3,2024-04-05,GetApp,Dorothy Rogers,HR Director,Workday,https://getapp.com/reviews/wd4
+"Robust compliance and reporting for multinational teams. We switched from ADP to Workday and don't regret it.",5,2024-05-18,G2,Kenneth Morgan,CEO,Workday,https://g2.com/reviews/wd5
+"Implementation was an absolute nightmare. The complexity is just too much for what we actually need.",2,2024-06-22,Capterra,Carol Cooper,COO,Workday,https://capterra.com/reviews/wd6
+"Enterprise features are top tier. The implementation time was almost double what they initially quoted us.",4,2024-07-11,TrustRadius,Edward Reed,People Ops Lead,Workday,https://trustradius.com/reviews/wd7
+"Powerful automation and workflows. It is incredibly complex to set up and requires a dedicated admin.",4,2024-08-09,GetApp,Ruth Bailey,Recruiter,Workday,https://getapp.com/reviews/wd8
+"Handles our 10k+ employees with ease. The user interface feels like it is stuck in 2010.",3,2024-09-16,G2,Brian Bell,Office Manager,Workday,https://g2.com/reviews/wd9
+"All our HR data is centralized now. Compared to Rippling, the UX is extremely outdated.",3,2024-10-21,Capterra,Sharon Gomez,CHRO,Workday,https://capterra.com/reviews/wd10
+"The best choice for global enterprise. Implementation took over a year and disrupted our entire HR flow.",4,2024-11-15,TrustRadius,Ronald Kelly,HR Manager,Workday,https://trustradius.com/reviews/wd11
+"Highly customizable for our specific business logic. It is very complex to learn for new HR staff.",4,2024-12-05,GetApp,Melissa Howard,VP of People,Workday,https://getapp.com/reviews/wd12
+"Great for large scale reporting. The UX is a bit dated and hard to navigate on mobile.",3,2025-01-18,G2,Timothy Ward,Payroll Admin,Workday,https://g2.com/reviews/wd13
+"Everything is integrated which reduces errors. Compared to BambooHR, the UI is incredibly clunky.",3,2025-02-22,Capterra,Deborah Cox,HR Director,Workday,https://capterra.com/reviews/wd14
+"Amazing compliance modules for our European entities. We switched from ADP to Workday and it improved efficiency.",5,2025-03-10,TrustRadius,Jeffrey Diaz,CEO,Workday,https://trustradius.com/reviews/wd15
+"The complexity is overwhelming for our managers. Considering leaving because adoption is so low across the company.",2,2025-04-14,GetApp,Janet Richardson,COO,Workday,https://getapp.com/reviews/wd16
+"Enterprise features are unmatched in the market. Implementation took forever and went way over budget.",4,2025-05-25,G2,Ryan Wood,People Ops Lead,Workday,https://g2.com/reviews/wd17
+"Incredibly powerful platform if configured correctly. It is very complex to learn and requires expensive consultants.",3,2025-06-30,Capterra,Virginia Watson,Recruiter,Workday,https://capterra.com/reviews/wd18
+"Great for massive scale and compliance. The UX is a bit dated and very hard to navigate.",3,2025-07-12,TrustRadius,Jacob Brooks,Office Manager,Workday,https://trustradius.com/reviews/wd19
+"Having one source of truth is great. Compared to Gusto, the UI is very clunky and slow.",3,2025-08-05,GetApp,Katherine Bennett,CHRO,Workday,https://getapp.com/reviews/wd20
+"Robust compliance and granular reporting. We switched from ADP to Workday and our data integrity improved.",5,2025-09-19,G2,Gary Gray,HR Manager,Workday,https://g2.com/reviews/wd21
+"Implementation was a complete nightmare. The complexity is just too much and we are evaluating alternatives.",1,2025-10-24,Capterra,Shirley James,VP of People,Workday,https://capterra.com/reviews/wd22
+"Enterprise features are great once running. Implementation took forever and support was unhelpful during the transition.",3,2024-01-05,TrustRadius,Nicholas Hughes,Payroll Admin,Workday,https://trustradius.com/reviews/wd23
+"Very powerful platform for enterprise. It is highly complex to learn and updates often break our custom reports.",3,2024-02-12,GetApp,Amy Price,HR Director,Workday,https://getapp.com/reviews/wd24
+"Great for large scale organizational management. The UX is incredibly dated and hard to navigate.",3,2024-03-25,G2,Eric Sanders,CEO,Workday,https://g2.com/reviews/wd25
+"It consolidates everything perfectly. Compared to BambooHR, the UI is a disaster.",3,2024-04-18,Capterra,Brenda Patel,COO,Workday,https://capterra.com/reviews/wd26
+"Terrible user experience for employees. We are considering leaving to find something more modern and user-friendly.",2,2024-05-30,TrustRadius,Stephen Myers,People Ops Lead,Workday,https://trustradius.com/reviews/wd27
+"Way too complex for a mid-sized business. Implementation was a nightmare and we regret the choice.",1,2024-06-14,GetApp,Emma Long,Recruiter,Workday,https://getapp.com/reviews/wd28
+"The system is robust but utterly confusing. Evaluating alternatives because our team refuses to use it.",1,2024-07-09,G2,Larry Foster,Office Manager,Workday,https://g2.com/reviews/wd29
+"Enterprise grade but terrible UI. Takes entirely too long to implement and train staff on basic tasks.",2,2024-08-21,Capterra,Kathleen Sanders,CHRO,Workday,https://capterra.com/reviews/wd30
+"The IT and HR automation is incredible. Pricing feels a bit steep as we add more modules.",4,2024-01-18,TrustRadius,Justin Ross,HR Manager,Rippling,https://trustradius.com/reviews/rip1
+"Modern UX makes onboarding an absolute breeze. Have hit a few bugs since it is a newer product.",4,2024-02-22,GetApp,Pamela Powell,VP of People,Rippling,https://getapp.com/reviews/rip2
+"Love managing IT devices and HR together. The constant upsells for new modules are getting annoying.",4,2024-03-10,G2,Scott Sullivan,Payroll Admin,Rippling,https://g2.com/reviews/rip3
+"Fastest payroll I've ever run. Thinking about leaving Gusto for Rippling permanently across all our entities.",5,2024-04-25,Capterra,Nicole Russell,HR Director,Rippling,https://capterra.com/reviews/rip4
+"Great automations and workflows. Rippling's UX blows Paylocity out of the water entirely.",5,2024-05-15,TrustRadius,Frank Ortiz,CEO,Rippling,https://trustradius.com/reviews/rip5
+"Too many glitches in the new modules. Considering leaving due to the unpredictable and rising pricing.",2,2024-06-08,GetApp,Christine Jenkins,COO,Rippling,https://getapp.com/reviews/rip6
+"The automation saves us hours every week. Pricing feels steep but the ROI is definitely there.",4,2024-07-20,G2,Brandon Perry,People Ops Lead,Rippling,https://g2.com/reviews/rip7
+"Sleek UX makes onboarding a breeze for new hires. We hit a few bugs with the benefits administration tool.",4,2024-08-14,Capterra,Samantha Bryant,Recruiter,Rippling,https://capterra.com/reviews/rip8
+"Love managing everything in one platform. The constant upsells from our account manager are annoying.",3,2024-09-05,TrustRadius,Gregory Alexander,Office Manager,Rippling,https://trustradius.com/reviews/rip9
+"Payroll takes five minutes to run. Thinking about leaving Gusto for Rippling due to these automations.",5,2024-10-18,GetApp,Heather Barnes,CHRO,Rippling,https://getapp.com/reviews/rip10
+"Fantastic automations across the board. Rippling's UX blows Paylocity out of the water completely.",5,2024-11-22,G2,Raymond Fisher,HR Manager,Rippling,https://g2.com/reviews/rip11
+"Too many glitches in the system lately. Considering leaving due to the unpredictable pricing changes.",2,2024-12-10,Capterra,Julie Henderson,VP of People,Rippling,https://capterra.com/reviews/rip12
+"The IT provision automation is incredible. Pricing feels a bit steep when you look at the total bill.",4,2025-01-14,TrustRadius,Samuel Coleman,Payroll Admin,Rippling,https://trustradius.com/reviews/rip13
+"Modern UX makes onboarding a breeze. Have hit a few bugs since they ship features so quickly.",4,2025-02-08,GetApp,Rebecca Simmons,HR Director,Rippling,https://getapp.com/reviews/rip14
+"Love managing IT and HR together seamlessly. The constant upsells are annoying and distract from the core product.",3,2025-03-25,G2,Patrick Patterson,CEO,Rippling,https://g2.com/reviews/rip15
+"Fastest payroll I've ever run by far. Switching from Gusto to Rippling was the best decision for our ops.",5,2025-04-11,Capterra,Kelly Jordan,COO,Rippling,https://capterra.com/reviews/rip16
+"Great automations that save me time. Rippling's UX blows Paylocity out of the water.",5,2025-05-06,TrustRadius,Dennis Reynolds,People Ops Lead,Rippling,https://trustradius.com/reviews/rip17
+"Too many glitches in the new performance module. Considering leaving due to the unpredictable pricing structure.",2,2025-06-21,GetApp,Mariah Hamilton,Recruiter,Rippling,https://getapp.com/reviews/rip18
+"The automation is incredible for our tech stack. Pricing feels a bit steep as we add international contractors.",4,2025-07-15,G2,Tyler Graham,Office Manager,Rippling,https://g2.com/reviews/rip19
+"Modern UX makes everything easy. Have hit a few bugs in the payroll module which is scary.",3,2025-08-09,Capterra,Lauren Kim,CHRO,Rippling,https://capterra.com/reviews/rip20
+"Love managing IT and HR together. The constant upsells are annoying and aggressive.",3,2025-09-28,TrustRadius,Aaron Washington,HR Manager,Rippling,https://trustradius.com/reviews/rip21
+"Extremely fast payroll processing. Thinking about leaving ADP for Rippling because of the speed.",5,2025-10-12,GetApp,Evelyn West,VP of People,Rippling,https://getapp.com/reviews/rip22
+"Pricing is out of control and transparency is zero. Evaluating alternatives because of the massive price hike.",1,2024-01-29,G2,Henry Gibson,Payroll Admin,Rippling,https://g2.com/reviews/rip23
+"Terrible bugs in the system disrupted our payroll. The modern UX doesn't make up for young product flaws.",1,2024-02-18,Capterra,Megan Brooks,HR Director,Rippling,https://capterra.com/reviews/rip24
+"Glitchy software with terrible customer support. Considering leaving due to unpredictable pricing and constant errors.",1,2024-03-12,TrustRadius,Douglas Ellis,CEO,Rippling,https://trustradius.com/reviews/rip25
+"Makes global payroll compliant and incredibly easy. Support response times can be very slow though.",4,2024-04-05,GetApp,Alice Harrison,COO,Deel,https://getapp.com/reviews/dl1
+"Great for managing our international contractors. Getting a human on chat takes days sometimes.",3,2024-05-22,G2,Peter Marshall,People Ops Lead,Deel,https://g2.com/reviews/dl2
+"Simplifies hiring abroad immensely. Customer service needs a major overhaul as they scale.",3,2024-06-15,Capterra,Joan Owens,Recruiter,Deel,https://capterra.com/reviews/dl3
+"The compliance features are top notch. Evaluated Rippling but went with Deel for better EOR coverage.",5,2024-07-10,TrustRadius,Walter Cole,Office Manager,Deel,https://trustradius.com/reviews/dl4
+"Makes global payroll compliant and easy to run. Support response times can be very slow when issues arise.",4,2024-08-28,GetApp,Joyce Tucker,CHRO,Deel,https://getapp.com/reviews/dl5
+"Great for our international contractors. Getting a human on chat takes days which delays our processes.",3,2024-09-12,G2,Arthur Porter,HR Manager,Deel,https://g2.com/reviews/dl6
+"Simplifies hiring abroad immensely and keeps us safe. Customer service needs a major overhaul urgently.",3,2024-10-07,Capterra,Frances Hunter,VP of People,Deel,https://capterra.com/reviews/dl7
+"The compliance features are top notch. Evaluated Rippling but went with Deel for pure global reach.",5,2024-11-19,TrustRadius,Carl Hicks,Payroll Admin,Deel,https://trustradius.com/reviews/dl8
+"Makes global payroll compliant and easy. Support response times can be very slow during peak times.",4,2024-12-08,GetApp,Ann Crawford,HR Director,Deel,https://getapp.com/reviews/dl9
+"Great for our international contractors. Getting a human on chat takes days and drives me crazy.",3,2025-01-25,G2,Ralph Mason,CEO,Deel,https://g2.com/reviews/dl10
+"Simplifies hiring abroad immensely. Customer service needs a major overhaul to match their growth.",3,2025-02-14,Capterra,Jean Rice,COO,Deel,https://capterra.com/reviews/dl11
+"The compliance features are top notch for EOR. Evaluated Rippling but went with Deel for global payroll.",5,2025-03-22,TrustRadius,Roy Black,People Ops Lead,Deel,https://trustradius.com/reviews/dl12
+"Makes global payroll compliant and straightforward. Support response times are unfortunately very slow.",4,2025-04-30,GetApp,Martha Knight,Recruiter,Deel,https://getapp.com/reviews/dl13
+"Great for our international contractors. Getting a human on chat takes days.",3,2025-05-18,G2,Eugene Dixon,Office Manager,Deel,https://g2.com/reviews/dl14
+"Simplifies hiring abroad immensely. Customer service needs a major overhaul.",3,2025-06-09,Capterra,Diana Palmer,CHRO,Deel,https://capterra.com/reviews/dl15
+"The compliance features are top notch. Evaluated Rippling but went with Deel for EOR.",5,2025-07-27,TrustRadius,Louis Stone,HR Manager,Deel,https://trustradius.com/reviews/dl16
+"Makes global payroll compliant and easy. Support response times can be very slow.",4,2025-08-14,GetApp,Gloria Burns,VP of People,Deel,https://getapp.com/reviews/dl17
+"Terrible support experience when a payment failed. Considering leaving if they don't fix their SLA.",2,2025-09-02,G2,Russell Gordon,Payroll Admin,Deel,https://g2.com/reviews/dl18
+"Support is completely unresponsive. Evaluating alternatives because we cannot risk missing international payrolls.",1,2025-10-21,Capterra,Teresa Weaver,HR Director,Deel,https://capterra.com/reviews/dl19
+"Compliance is good but the support is awful. Considering leaving due to the lack of account management.",1,2024-01-11,TrustRadius,Bobby Daniels,CEO,Deel,https://trustradius.com/reviews/dl20
+"Perfect simplicity for small businesses. Starting to hit scaling limitations as we pass 100 employees.",4,2024-02-05,GetApp,Julia Hayes,COO,Gusto,https://getapp.com/reviews/gs1
+"Super intuitive payroll that anyone can run. Wish it had better performance management tools built in.",4,2024-03-18,G2,Johnny Ford,People Ops Lead,Gusto,https://g2.com/reviews/gs2
+"Great price and very easy to run. We are outgrowing it and need something more robust soon.",3,2024-04-22,Capterra,Marie Chapman,Recruiter,Gusto,https://capterra.com/reviews/gs3
+"Best UI for SMBs by far. Gusto is easier than ADP Workforce Now by a country mile.",5,2024-05-14,TrustRadius,Billy Webb,Office Manager,Gusto,https://trustradius.com/reviews/gs4
+"Perfect simplicity for our small team. Starting to hit scaling limitations as we pass 100 employees.",4,2024-06-25,GetApp,Grace Harrison,CHRO,Gusto,https://getapp.com/reviews/gs5
+"Super intuitive payroll system. Wish it had better performance management tools for our managers.",4,2024-07-08,G2,Bryan Gibson,HR Manager,Gusto,https://g2.com/reviews/gs6
+"Great price and easy to run. We are outgrowing it and need something more robust.",3,2024-08-19,Capterra,Judy Washington,VP of People,Gusto,https://capterra.com/reviews/gs7
+"Best UI for small businesses. Gusto is easier than ADP Workforce Now by a mile.",5,2024-09-30,TrustRadius,Philip Fisher,Payroll Admin,Gusto,https://trustradius.com/reviews/gs8
+"Perfect simplicity for small businesses. Starting to hit scaling limitations as we open new offices.",4,2024-10-15,GetApp,Beverly Meyer,HR Director,Gusto,https://getapp.com/reviews/gs9
+"Super intuitive payroll. Wish it had better performance management tools.",4,2024-11-05,G2,Shawn Wagner,CEO,Gusto,https://g2.com/reviews/gs10
+"Great price and easy to run. We are outgrowing it and need something more robust.",3,2024-12-20,Capterra,Denise Dunn,COO,Gusto,https://capterra.com/reviews/gs11
+"Best UI for SMBs. Gusto is easier than ADP Workforce Now by a mile.",5,2025-01-12,TrustRadius,Jeremy Woods,People Ops Lead,Gusto,https://trustradius.com/reviews/gs12
+"Perfect simplicity for small businesses. Starting to hit scaling limitations as we pass 150 employees.",4,2025-02-28,GetApp,Amber Barnes,Recruiter,Gusto,https://getapp.com/reviews/gs13
+"Super intuitive payroll platform. Wish it had better performance management tools natively.",4,2025-03-17,G2,Christian Perry,Office Manager,Gusto,https://g2.com/reviews/gs14
+"Great price and easy to run. We are outgrowing it and need something more robust for HRIS.",3,2025-04-09,Capterra,Megan Powell,CHRO,Gusto,https://capterra.com/reviews/gs15
+"Best UI for SMBs. Gusto is easier than ADP Workforce Now by a mile.",5,2025-05-22,TrustRadius,Keith Sullivan,HR Manager,Gusto,https://trustradius.com/reviews/gs16
+"Perfect simplicity for small businesses. Starting to hit scaling limitations as we pass 100 employees.",4,2025-06-14,GetApp,Kayla Russell,VP of People,Gusto,https://getapp.com/reviews/gs17
+"Customer service has tanked recently. We are considering switching to Rippling for better scaling.",2,2025-07-03,G2,Roger Ortiz,Payroll Admin,Gusto,https://g2.com/reviews/gs18
+"The system is too basic for our current size. Evaluating alternatives because support is completely unresponsive.",1,2025-08-11,Capterra,Danielle Jenkins,HR Director,Gusto,https://capterra.com/reviews/gs19
+"We have completely outgrown Gusto. Considering leaving because it lacks the enterprise features we now need.",1,2025-09-25,TrustRadius,Terry Bryant,CEO,Gusto,https://trustradius.com/reviews/gs20
+"Very reliable payroll engine that never fails. The UI looks like it is from 2005 though.",3,2024-01-15,GetApp,Jacqueline Alexander,COO,ADP Workforce Now,https://getapp.com/reviews/adp1
+"You can trust the tax compliance implicitly. Customer service is notoriously difficult to reach.",3,2024-02-28,G2,Albert Barnes,People Ops Lead,ADP Workforce Now,https://g2.com/reviews/adp2
+"Payroll never fails and handles complexity well. Switching from Paylocity to ADP was a good move for stability.",4,2024-03-14,Capterra,Willie Henderson,Recruiter,ADP Workforce Now,https://capterra.com/reviews/adp3
+"Very reliable payroll engine. The UI looks like it is from 2005.",3,2024-04-02,TrustRadius,Olivia Coleman,Office Manager,ADP Workforce Now,https://trustradius.com/reviews/adp4
+"You can absolutely trust the tax compliance. Customer service is notoriously difficult to reach when needed.",3,2024-05-19,GetApp,Alan Simmons,CHRO,ADP Workforce Now,https://getapp.com/reviews/adp5
+"Payroll runs perfectly every time. Switching from Paylocity to ADP was a good move for stability.",4,2024-06-11,G2,Sophia Patterson,HR Manager,ADP Workforce Now,https://g2.com/reviews/adp6
+"Very reliable payroll engine. The UI looks like it is from 2005.",3,2024-07-05,Capterra,Juan Jordan,VP of People,ADP Workforce Now,https://capterra.com/reviews/adp7
+"You can trust the tax compliance. Customer service is notoriously difficult to reach.",3,2024-08-22,TrustRadius,Isabella Reynolds,Payroll Admin,ADP Workforce Now,https://trustradius.com/reviews/adp8
+"The system is so outdated and clunky. Evaluating alternatives like Rippling to get a modern interface.",2,2024-09-10,GetApp,Logan Hamilton,HR Director,ADP Workforce Now,https://getapp.com/reviews/adp9
+"Horrible customer service and an ancient interface. Considering leaving because it is too hard to use.",1,2024-10-28,G2,Abigail Graham,CEO,ADP Workforce Now,https://g2.com/reviews/adp10
+"Payroll accuracy is spot on every cycle. The interface is quite clunky and hard to train on.",3,2024-11-15,Capterra,Elijah Kim,COO,Paylocity,https://capterra.com/reviews/pay1
+"Good feature set for mid-market companies. The UX needs a massive redesign to be competitive.",3,2024-12-04,TrustRadius,Mia Washington,People Ops Lead,Paylocity,https://trustradius.com/reviews/pay2
+"Solid reporting once you figure it out. We are considering switching to Workday for better enterprise flow.",3,2025-01-22,GetApp,Benjamin West,Recruiter,Paylocity,https://getapp.com/reviews/pay3
+"Payroll accuracy is spot on. The interface is quite clunky and hard to train on.",3,2025-02-09,G2,Charlotte Gibson,Office Manager,Paylocity,https://g2.com/reviews/pay4
+"Good feature set for mid-market. The UX needs a massive redesign.",3,2025-03-18,Capterra,Lucas Brooks,CHRO,Paylocity,https://capterra.com/reviews/pay5
+"Solid reporting once you finally figure it out. We are considering switching to Workday for better enterprise flow.",3,2025-04-05,TrustRadius,Amelia Ellis,HR Manager,Paylocity,https://trustradius.com/reviews/pay6
+"Payroll accuracy is spot on. The interface is quite clunky and hard to train on.",3,2025-05-24,GetApp,Mason Harrison,VP of People,Paylocity,https://getapp.com/reviews/pay7
+"Good feature set for mid-market. The UX needs a massive redesign.",3,2025-06-12,G2,Harper Marshall,Payroll Admin,Paylocity,https://g2.com/reviews/pay8
+"Too difficult to navigate for everyday managers. The clunky interface is making us evaluate alternatives.",2,2025-07-30,Capterra,Ethan Owens,HR Director,Paylocity,https://capterra.com/reviews/pay9
+"Terrible user experience that frustrates our entire team. Considering leaving for Rippling to get a modern system.",1,2025-08-15,TrustRadius,Evelyn Cole,CEO,Paylocity,https://trustradius.com/reviews/pay10

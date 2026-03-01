@@ -1,23 +1,23 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Search,
-  Building2,
+  Upload,
   ChevronRight,
   Sparkles,
-  Star,
   TrendingUp,
   ArrowRight,
-  Globe,
+  FileText,
+  CheckCircle2,
+  Loader2,
+  Download,
+  Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/lib/store";
-import { industries, competitorsByIndustry } from "@/lib/data";
 
 function FloatingOrb({
   delay,
@@ -56,30 +56,10 @@ function StepIndicator({ current, total }: { current: number; total: number }) {
           key={i}
           className={cn(
             "h-1.5 rounded-full",
-            i === current ? "bg-primary" : "bg-muted-foreground/20"
+            i === current ? "bg-primary" : i < current ? "bg-primary/50" : "bg-muted-foreground/20"
           )}
           animate={{ width: i === current ? 32 : 12 }}
           transition={{ type: "spring", stiffness: 300, damping: 25 }}
-        />
-      ))}
-    </div>
-  );
-}
-
-function StarRating({ rating }: { rating: number }) {
-  return (
-    <div className="flex items-center gap-0.5">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <Star
-          key={i}
-          className={cn(
-            "h-3.5 w-3.5",
-            i < Math.floor(rating)
-              ? "fill-amber-400 text-amber-400"
-              : i < rating
-                ? "fill-amber-400/50 text-amber-400"
-                : "text-muted-foreground/30"
-          )}
         />
       ))}
     </div>
@@ -90,18 +70,12 @@ export default function OnboardingPage() {
   const router = useRouter();
   const store = useAppStore();
   const [step, setStep] = useState(0);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedIndustry, setSelectedIndustry] = useState<string | null>(null);
-  const [selectedCompetitors, setSelectedCompetitors] = useState<string[]>([]);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [direction, setDirection] = useState(1);
-
-  const filteredIndustries = industries.filter((ind) =>
-    ind.label.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const competitors = selectedIndustry
-    ? competitorsByIndustry[selectedIndustry] ?? []
-    : [];
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [extractedCompetitors, setExtractedCompetitors] = useState<string[]>([]);
+  const [selectedCompetitors, setSelectedCompetitors] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const goNext = useCallback(() => {
     setDirection(1);
@@ -126,22 +100,53 @@ export default function OnboardingPage() {
     }),
   };
 
-  const toggleCompetitor = (name: string) => {
-    setSelectedCompetitors((prev) =>
-      prev.includes(name)
-        ? prev.filter((n) => n !== name)
-        : [...prev, name]
-    );
-  };
+  const handleFileDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file && file.name.endsWith(".csv")) {
+      setSelectedFile(file);
+    }
+  }, []);
 
-  const handleSelectIndustry = (id: string) => {
-    setSelectedIndustry(id);
-    store.setIndustry(id);
-  };
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+    }
+  }, []);
 
-  const handleFinish = () => {
-    store.setSelectedCompetitors(selectedCompetitors);
+  const handleUpload = useCallback(async () => {
+    if (!selectedFile) return;
+
+    goNext(); // Move to step 3 (analysis progress)
+
+    try {
+      await store.uploadCSV(selectedFile);
+
+      // Extract competitor names from store after analysis
+      const competitors = store.competitors.map((c) => c.name);
+      setExtractedCompetitors(competitors);
+      setSelectedCompetitors(competitors);
+
+      // Move to competitor selection step
+      setDirection(1);
+      setStep(4);
+    } catch {
+      // Error is handled in the store
+    }
+  }, [selectedFile, store, goNext]);
+
+  const handleFinish = useCallback(() => {
     router.push("/dashboard");
+  }, [router]);
+
+  const statusMessages: Record<string, string> = {
+    uploading: "Uploading your CSV file...",
+    parsing: "Parsing review data...",
+    analyzing: "Analyzing reviews with AI...",
+    complete: "Analysis complete!",
+    error: store.error ?? "An error occurred",
   };
 
   return (
@@ -176,10 +181,11 @@ export default function OnboardingPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <StepIndicator current={step} total={3} />
+          <StepIndicator current={step} total={5} />
         </motion.div>
 
         <AnimatePresence mode="wait" custom={direction}>
+          {/* Step 0: Welcome */}
           {step === 0 && (
             <motion.div
               key="welcome"
@@ -229,9 +235,9 @@ export default function OnboardingPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.55 }}
                 >
-                  AI-powered competitor review analysis.
+                  AI-powered competitive intelligence for HR Tech.
                   <br />
-                  Let&apos;s find out who you&apos;re up against.
+                  Every insight backed by real review quotes.
                 </motion.p>
               </div>
 
@@ -242,9 +248,9 @@ export default function OnboardingPage() {
                 transition={{ delay: 0.7 }}
               >
                 {[
-                  "Sentiment Analysis",
-                  "Trend Detection",
-                  "Smart Summaries",
+                  "Source Traceability",
+                  "Competitive Battlecards",
+                  "Churn Intelligence",
                 ].map((feature, i) => (
                   <motion.span
                     key={feature}
@@ -275,9 +281,10 @@ export default function OnboardingPage() {
             </motion.div>
           )}
 
+          {/* Step 1: SaaS Vertical Confirmation */}
           {step === 1 && (
             <motion.div
-              key="industry"
+              key="vertical"
               custom={direction}
               variants={slideVariants}
               initial="enter"
@@ -306,7 +313,7 @@ export default function OnboardingPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
                 >
-                  What&apos;s your industry?
+                  Your SaaS Vertical
                 </motion.h2>
                 <motion.p
                   className="text-sm text-muted-foreground"
@@ -314,85 +321,343 @@ export default function OnboardingPage() {
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.3 }}
                 >
-                  We&apos;ll find competitors in your space automatically.
+                  ReviewIntel is optimized for HR Tech SaaS competitive analysis.
                 </motion.p>
               </div>
 
               <motion.div
-                className="relative"
+                className="rounded-xl border border-primary bg-primary/5 p-4 ring-1 ring-primary/20"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.35 }}
-              >
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Search industries..."
-                  className="h-11 pl-10 text-sm"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  autoFocus
-                />
-              </motion.div>
-
-              <motion.div
-                className="grid grid-cols-2 gap-2"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
                 transition={{ delay: 0.4 }}
               >
-                {filteredIndustries.map((industry, i) => (
-                  <motion.button
-                    key={industry.id}
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.45 + i * 0.05 }}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => handleSelectIndustry(industry.id)}
-                    className={cn(
-                      "flex items-center gap-3 rounded-xl border p-3.5 text-left transition-colors",
-                      selectedIndustry === industry.id
-                        ? "border-primary bg-primary/5 ring-1 ring-primary/20"
-                        : "border-border bg-card hover:border-primary/30 hover:bg-accent/50"
-                    )}
-                  >
-                    <span className="text-xl">{industry.icon}</span>
-                    <span className="text-sm font-medium">{industry.label}</span>
-                  </motion.button>
-                ))}
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">💼</span>
+                  <div>
+                    <p className="font-semibold">HR Tech SaaS</p>
+                    <p className="text-sm text-muted-foreground">
+                      HRIS, ATS, Payroll, Benefits, Workforce Management
+                    </p>
+                  </div>
+                  <CheckCircle2 className="ml-auto h-5 w-5 text-primary" />
+                </div>
               </motion.div>
 
-              {filteredIndustries.length === 0 && (
-                <motion.p
-                  className="text-center text-sm text-muted-foreground"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                >
-                  No matching industries. Try a different search term.
-                </motion.p>
-              )}
+              <motion.p
+                className="text-center text-xs text-muted-foreground"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+              >
+                Analyze reviews from G2, Capterra, and app stores for products like
+                BambooHR, Workday, Rippling, Deel, and more.
+              </motion.p>
 
               <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: selectedIndustry ? 1 : 0.5 }}
-                transition={{ duration: 0.2 }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
               >
                 <Button
                   size="lg"
                   className="group w-full text-base"
-                  disabled={!selectedIndustry}
                   onClick={goNext}
                 >
-                  Find Competitors
+                  Continue
                   <ChevronRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                 </Button>
               </motion.div>
             </motion.div>
           )}
 
+          {/* Step 2: CSV Upload */}
           {step === 2 && (
             <motion.div
-              key="competitors"
+              key="upload"
+              custom={direction}
+              variants={slideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ type: "spring", stiffness: 200, damping: 25 }}
+              className="space-y-6"
+            >
+              <div className="space-y-2 text-center">
+                <motion.div
+                  className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/10"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 300,
+                    damping: 20,
+                    delay: 0.1,
+                  }}
+                >
+                  <Upload className="h-6 w-6 text-blue-600" />
+                </motion.div>
+                <motion.h2
+                  className="text-2xl font-bold tracking-tight"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  Upload Your Reviews
+                </motion.h2>
+                <motion.p
+                  className="text-sm text-muted-foreground"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  Drop a CSV export from G2, Capterra, or any review platform.
+                </motion.p>
+              </div>
+
+              {/* Drag & Drop Zone */}
+              <motion.div
+                className={cn(
+                  "relative rounded-xl border-2 border-dashed p-8 text-center transition-colors cursor-pointer",
+                  isDragOver
+                    ? "border-primary bg-primary/5"
+                    : selectedFile
+                      ? "border-green-500 bg-green-500/5"
+                      : "border-border hover:border-primary/50 hover:bg-accent/50"
+                )}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setIsDragOver(true);
+                }}
+                onDragLeave={() => setIsDragOver(false)}
+                onDrop={handleFileDrop}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".csv"
+                  className="hidden"
+                  onChange={handleFileSelect}
+                />
+
+                {selectedFile ? (
+                  <div className="space-y-2">
+                    <FileText className="mx-auto h-10 w-10 text-green-600" />
+                    <p className="font-medium text-green-700">{selectedFile.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {(selectedFile.size / 1024).toFixed(1)} KB — Click to change
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Upload className="mx-auto h-10 w-10 text-muted-foreground" />
+                    <p className="font-medium">
+                      Drop your CSV here, or click to browse
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Accepts Capterra, G2, and standard CSV formats
+                    </p>
+                  </div>
+                )}
+              </motion.div>
+
+              {/* Sample Data Link */}
+              <motion.div
+                className="text-center"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.5 }}
+              >
+                <a
+                  href="/sample-data/sample-reviews.csv"
+                  download
+                  className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  Download sample HR Tech review data
+                </a>
+              </motion.div>
+
+              <motion.div
+                className="space-y-3"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 }}
+              >
+                <Button
+                  size="lg"
+                  className="group w-full text-base"
+                  disabled={!selectedFile}
+                  onClick={handleUpload}
+                >
+                  Analyze Reviews
+                  <Sparkles className="ml-2 h-4 w-4 transition-transform group-hover:rotate-12" />
+                </Button>
+              </motion.div>
+            </motion.div>
+          )}
+
+          {/* Step 3: Analysis Progress */}
+          {step === 3 && (
+            <motion.div
+              key="progress"
+              custom={direction}
+              variants={slideVariants}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ type: "spring", stiffness: 200, damping: 25 }}
+              className="space-y-8"
+            >
+              <div className="space-y-3 text-center">
+                <motion.div
+                  className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 200,
+                    damping: 15,
+                    delay: 0.1,
+                  }}
+                >
+                  {store.analysisStatus === "error" ? (
+                    <span className="text-3xl">⚠️</span>
+                  ) : store.analysisStatus === "complete" ? (
+                    <CheckCircle2 className="h-8 w-8 text-green-600" />
+                  ) : (
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  )}
+                </motion.div>
+                <motion.h2
+                  className="text-2xl font-bold tracking-tight"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  {store.analysisStatus === "error"
+                    ? "Analysis Error"
+                    : store.analysisStatus === "complete"
+                      ? "Analysis Complete!"
+                      : "Analyzing Your Reviews"}
+                </motion.h2>
+                <motion.p
+                  className="text-sm text-muted-foreground"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  {statusMessages[store.analysisStatus] ?? "Processing..."}
+                </motion.p>
+              </div>
+
+              {/* Progress Bar */}
+              <motion.div
+                className="space-y-2"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4 }}
+              >
+                <div className="h-2 rounded-full bg-muted overflow-hidden">
+                  <motion.div
+                    className={cn(
+                      "h-full rounded-full",
+                      store.analysisStatus === "error"
+                        ? "bg-red-500"
+                        : store.analysisStatus === "complete"
+                          ? "bg-green-500"
+                          : "bg-primary"
+                    )}
+                    initial={{ width: "0%" }}
+                    animate={{ width: `${store.uploadProgress}%` }}
+                    transition={{ duration: 0.5 }}
+                  />
+                </div>
+                <p className="text-center text-xs text-muted-foreground">
+                  {store.uploadProgress}% complete
+                </p>
+              </motion.div>
+
+              {/* Error Message */}
+              {store.analysisStatus === "error" && store.error && (
+                <motion.div
+                  className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-400"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                >
+                  <p className="font-medium">Error:</p>
+                  <p>{store.error}</p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3"
+                    onClick={() => {
+                      store.clearError();
+                      setDirection(-1);
+                      setStep(2);
+                    }}
+                  >
+                    Try Again
+                  </Button>
+                </motion.div>
+              )}
+
+              {/* Steps checklist */}
+              {store.analysisStatus !== "error" && (
+                <motion.div
+                  className="space-y-3"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.5 }}
+                >
+                  {[
+                    { key: "uploading", label: "Uploading CSV file" },
+                    { key: "parsing", label: "Parsing review data" },
+                    { key: "analyzing", label: "Running AI analysis" },
+                    { key: "complete", label: "Generating insights" },
+                  ].map((s) => {
+                    const steps = ["uploading", "parsing", "analyzing", "complete"];
+                    const currentIdx = steps.indexOf(store.analysisStatus);
+                    const stepIdx = steps.indexOf(s.key);
+                    const isDone = stepIdx < currentIdx || store.analysisStatus === "complete";
+                    const isCurrent = stepIdx === currentIdx && store.analysisStatus !== "complete";
+
+                    return (
+                      <div key={s.key} className="flex items-center gap-3">
+                        {isDone ? (
+                          <CheckCircle2 className="h-5 w-5 text-green-600" />
+                        ) : isCurrent ? (
+                          <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                        ) : (
+                          <div className="h-5 w-5 rounded-full border-2 border-muted-foreground/20" />
+                        )}
+                        <span
+                          className={cn(
+                            "text-sm",
+                            isDone
+                              ? "text-foreground"
+                              : isCurrent
+                                ? "text-foreground font-medium"
+                                : "text-muted-foreground"
+                          )}
+                        >
+                          {s.label}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </motion.div>
+              )}
+            </motion.div>
+          )}
+
+          {/* Step 4: Complete / Summary */}
+          {step === 4 && (
+            <motion.div
+              key="complete"
               custom={direction}
               variants={slideVariants}
               initial="enter"
@@ -421,7 +686,7 @@ export default function OnboardingPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
                 >
-                  We found your competitors
+                  Analysis Complete! 🎉
                 </motion.h2>
                 <motion.p
                   className="text-sm text-muted-foreground"
@@ -429,136 +694,69 @@ export default function OnboardingPage() {
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.3 }}
                 >
-                  Select the ones you want to track. You can add more later.
+                  Here&apos;s what we found in your reviews.
                 </motion.p>
               </div>
 
-              <div className="space-y-2">
-                {competitors.map((competitor, i) => {
-                  const isSelected = selectedCompetitors.includes(
-                    competitor.name
-                  );
-                  return (
-                    <motion.button
-                      key={competitor.name}
-                      initial={{ opacity: 0, x: 40 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{
-                        type: "spring",
-                        stiffness: 200,
-                        damping: 22,
-                        delay: 0.35 + i * 0.1,
-                      }}
-                      whileHover={{ scale: 1.01 }}
-                      whileTap={{ scale: 0.99 }}
-                      onClick={() => toggleCompetitor(competitor.name)}
-                      className={cn(
-                        "flex w-full items-center gap-4 rounded-xl border p-4 text-left transition-all",
-                        isSelected
-                          ? "border-primary bg-primary/5 ring-1 ring-primary/20"
-                          : "border-border bg-card hover:border-primary/30 hover:bg-accent/50"
-                      )}
-                    >
-                      <div
-                        className={cn(
-                          "flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-sm font-bold transition-colors",
-                          isSelected
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted text-muted-foreground"
-                        )}
+              {/* Summary Stats */}
+              <motion.div
+                className="grid grid-cols-3 gap-3"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+              >
+                <div className="rounded-xl border bg-card p-4 text-center">
+                  <p className="text-2xl font-bold">{store.reviewCount}</p>
+                  <p className="text-xs text-muted-foreground">Reviews</p>
+                </div>
+                <div className="rounded-xl border bg-card p-4 text-center">
+                  <p className="text-2xl font-bold">{store.competitors.length}</p>
+                  <p className="text-xs text-muted-foreground">Competitors</p>
+                </div>
+                <div className="rounded-xl border bg-card p-4 text-center">
+                  <p className="text-2xl font-bold">{store.insights.length}</p>
+                  <p className="text-xs text-muted-foreground">Insights</p>
+                </div>
+              </motion.div>
+
+              {/* Competitor list */}
+              {extractedCompetitors.length > 0 && (
+                <motion.div
+                  className="space-y-2"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.5 }}
+                >
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                    Competitors Identified
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {extractedCompetitors.map((name) => (
+                      <span
+                        key={name}
+                        className="rounded-full border bg-card px-3 py-1 text-sm font-medium"
                       >
-                        {competitor.name[0]}
-                      </div>
-
-                      <div className="flex-1 space-y-1">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-semibold">
-                            {competitor.name}
-                          </span>
-                          <span className="text-xs font-medium tabular-nums text-muted-foreground">
-                            {competitor.rating.toFixed(1)}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Globe className="h-3 w-3 text-muted-foreground/60" />
-                            <span className="text-xs text-muted-foreground">
-                              {competitor.url}
-                            </span>
-                          </div>
-                          <StarRating rating={competitor.rating} />
-                        </div>
-                        <div className="text-xs text-muted-foreground/70">
-                          {competitor.reviews.toLocaleString()} reviews analyzed
-                        </div>
-                      </div>
-
-                      <motion.div
-                        className={cn(
-                          "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
-                          isSelected
-                            ? "border-primary bg-primary"
-                            : "border-muted-foreground/30"
-                        )}
-                        animate={isSelected ? { scale: [1, 1.2, 1] } : {}}
-                        transition={{ duration: 0.2 }}
-                      >
-                        {isSelected && (
-                          <motion.svg
-                            initial={{ pathLength: 0 }}
-                            animate={{ pathLength: 1 }}
-                            transition={{ duration: 0.2 }}
-                            viewBox="0 0 12 12"
-                            className="h-3 w-3 text-primary-foreground"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth={2}
-                            strokeLinecap="round"
-                          >
-                            <motion.path d="M2.5 6L5 8.5L9.5 3.5" />
-                          </motion.svg>
-                        )}
-                      </motion.div>
-                    </motion.button>
-                  );
-                })}
-              </div>
-
-              <AnimatePresence>
-                {selectedCompetitors.length > 0 && (
-                  <motion.p
-                    className="text-center text-xs text-muted-foreground"
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                  >
-                    {selectedCompetitors.length} competitor
-                    {selectedCompetitors.length !== 1 && "s"} selected
-                  </motion.p>
-                )}
-              </AnimatePresence>
+                        {name}
+                      </span>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
 
               <motion.div
                 className="space-y-3"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.7 }}
+                transition={{ delay: 0.6 }}
               >
                 <Button
                   size="lg"
                   className="group w-full text-base"
-                  disabled={selectedCompetitors.length === 0}
                   onClick={handleFinish}
                 >
-                  Start Tracking
-                  <Sparkles className="ml-2 h-4 w-4 transition-transform group-hover:rotate-12" />
+                  Go to Dashboard
+                  <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </Button>
-                <button
-                  onClick={() => router.push("/dashboard")}
-                  className="block w-full text-center text-sm text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  Skip for now
-                </button>
               </motion.div>
             </motion.div>
           )}

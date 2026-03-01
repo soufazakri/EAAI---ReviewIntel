@@ -1,0 +1,105 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Dataset {
+  id        String   @id @default(cuid())
+  name      String   @default("Uploaded Reviews")
+  status    String   @default("uploading") // uploading | parsing | analyzing | complete | error
+  errorMsg  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reviews      Review[]
+  claims       Claim[]
+  insights     InsightTheme[]
+  competitors  Competitor[]
+  actionItems  ActionItem[]
+}
+
+model Review {
+  id           String   @id @default(cuid())
+  datasetId    String
+  reviewText   String
+  rating       Float
+  reviewDate   String
+  platform     String   // G2 | Capterra | AppStore | Reddit
+  reviewerName String
+  reviewerRole String   @default("")
+  productName  String
+  reviewUrl    String   @default("")
+  createdAt    DateTime @default(now())
+
+  dataset Dataset @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+  claims  Claim[]
+  sourceQuotes InsightSourceQuote[]
+}
+
+model Claim {
+  id         String @id @default(cuid())
+  datasetId  String
+  reviewId   String
+  claimText  String
+  category   String // feature_request | complaint | praise | churn_signal
+  quoteText  String
+  confidence String // high | medium | low
+
+  dataset Dataset @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+  review  Review  @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  sourceQuotes InsightSourceQuote[]
+}
+
+model InsightTheme {
+  id              String  @id @default(cuid())
+  datasetId       String
+  title           String
+  description     String
+  category        String  // feature_gap | churn_driver | product_strength | pricing_concern
+  impact          String  // high | medium | low
+  confidenceScore Float   @default(0)
+
+  dataset      Dataset              @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+  sourceQuotes InsightSourceQuote[]
+  actionItems  ActionItem[]
+}
+
+model InsightSourceQuote {
+  id             String @id @default(cuid())
+  insightThemeId String
+  claimId        String
+  reviewId       String
+
+  insightTheme InsightTheme @relation(fields: [insightThemeId], references: [id], onDelete: Cascade)
+  claim        Claim        @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  review       Review       @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+}
+
+model Competitor {
+  id              String @id @default(cuid())
+  datasetId       String
+  name            String
+  mentionCount    Int    @default(0)
+  avgSentiment    Float  @default(0)
+  complaintThemes String @default("[]") // JSON array
+  praiseThemes    String @default("[]") // JSON array
+
+  dataset Dataset @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+}
+
+model ActionItem {
+  id             String @id @default(cuid())
+  datasetId      String
+  insightThemeId String?
+  title          String
+  description    String
+  priority       String @default("medium") // high | medium | low
+  status         String @default("not_started") // not_started | in_progress | complete
+
+  dataset      Dataset       @relation(fields: [datasetId], references: [id], onDelete: Cascade)
+  insightTheme InsightTheme? @relation(fields: [insightThemeId], references: [id], onDelete: SetNull)
+}
