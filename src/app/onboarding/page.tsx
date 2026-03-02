@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -73,8 +73,7 @@ export default function OnboardingPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [direction, setDirection] = useState(1);
   const [isDragOver, setIsDragOver] = useState(false);
-  const [extractedCompetitors, setExtractedCompetitors] = useState<string[]>([]);
-  const [selectedCompetitors, setSelectedCompetitors] = useState<string[]>([]);
+  const [extractedCompetitors] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const goNext = useCallback(() => {
@@ -123,15 +122,8 @@ export default function OnboardingPage() {
 
     try {
       await store.uploadCSV(selectedFile);
-
-      // Extract competitor names from store after analysis
-      const competitors = store.competitors.map((c) => c.name);
-      setExtractedCompetitors(competitors);
-      setSelectedCompetitors(competitors);
-
-      // Move to competitor selection step
-      setDirection(1);
-      setStep(4);
+      // uploadCSV now fires-and-forgets the analysis and starts polling.
+      // Step advancement to 4 is handled by the useEffect watching analysisStatus.
     } catch {
       // Error is handled in the store
     }
@@ -141,10 +133,21 @@ export default function OnboardingPage() {
     router.push("/dashboard");
   }, [router]);
 
+  // Advance to step 4 when analysis completes
+  useEffect(() => {
+    if (step === 3 && store.analysisStatus === "complete") {
+      setDirection(1);
+      setStep(4);
+    }
+  }, [step, store.analysisStatus]);
+
   const statusMessages: Record<string, string> = {
     uploading: "Uploading your CSV file...",
     parsing: "Parsing review data...",
-    analyzing: "Analyzing reviews with AI...",
+    extracting: "Extracting claims from reviews...",
+    clustering: "Clustering related claims...",
+    synthesizing: "Synthesizing insights...",
+    generating_battlecards: "Generating action items...",
     complete: "Analysis complete!",
     error: store.error ?? "An error occurred",
   };
@@ -616,10 +619,13 @@ export default function OnboardingPage() {
                   {[
                     { key: "uploading", label: "Uploading CSV file" },
                     { key: "parsing", label: "Parsing review data" },
-                    { key: "analyzing", label: "Running AI analysis" },
-                    { key: "complete", label: "Generating insights" },
+                    { key: "extracting", label: "Extracting claims from reviews" },
+                    { key: "clustering", label: "Clustering related claims" },
+                    { key: "synthesizing", label: "Synthesizing insights" },
+                    { key: "generating_battlecards", label: "Generating action items" },
+                    { key: "complete", label: "Complete" },
                   ].map((s) => {
-                    const steps = ["uploading", "parsing", "analyzing", "complete"];
+                    const steps = ["uploading", "parsing", "extracting", "clustering", "synthesizing", "generating_battlecards", "complete"];
                     const currentIdx = steps.indexOf(store.analysisStatus);
                     const stepIdx = steps.indexOf(s.key);
                     const isDone = stepIdx < currentIdx || store.analysisStatus === "complete";

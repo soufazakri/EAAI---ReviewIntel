@@ -2,15 +2,30 @@
  * Evidence Engine Pipeline
  * Processes uploaded CSV reviews into trustworthy, source-traced insights.
  *
- * Uses a SINGLE Gemini API call to extract all analysis at once:
- *   1. parseCSV — Extract reviews from CSV (local, no API)
- *   2. analyzeAllReviews — One Gemini call → competitors, insights, action items
- *   3. storeResults — Persist to database
+ * Uses a batched multi-step pipeline:
+ *   1. Extraction — Batch reviews into groups, extract structured claims via Gemini
+ *   2. Clustering — Group related claims by theme (code-based)
+ *   3. Synthesis — Generate actionable insights from clustered claims via Gemini
+ *   4. Battlecard — Generate action items from insights via Gemini
+ *   5. Competitors — Extract competitor intelligence via Gemini
  */
 
 import { parse } from "csv-parse/sync";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { prisma } from "./db";
+import {
+    type ReviewForExtraction,
+    type ClaimForSynthesis,
+    type ClaimCluster,
+    getExtractionSystemPrompt,
+    getExtractionUserPrompt,
+    getSynthesisSystemPrompt,
+    getSynthesisUserPrompt,
+    getBattlecardSystemPrompt,
+    getBattlecardUserPrompt,
+    getCompetitorExtractionSystemPrompt,
+    getCompetitorExtractionUserPrompt,
+} from "./prompts";
 
 // ─── Column mapping for CSV formats ──────────────────────────────────
 
@@ -158,177 +173,437 @@ function getGeminiModel() {
     });
 }
 
-// ─── Single Mega-Prompt ──────────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────────────────
 
-interface ReviewInput {
-    index: number;
-    text: string;
-    rating: number;
-    platform: string;
-    product: string;
-    date: string;
-    reviewer: string;
-    role: string;
+interface ExtractedClaim {
+    reviewId: string;
+    claimText: string;
+    category: "feature_request" | "complaint" | "praise" | "churn_signal";
+    quoteText: string;
+    confidence: "high" | "medium" | "low";
+    competitorMentions: string[];
 }
 
-interface MegaAnalysisResult {
-    competitors: Array<{
-        name: string;
-        mentionCount: number;
-        avgSentiment: number;
-        praiseThemes: string[];
-        complaintThemes: string[];
-    }>;
-    insights: Array<{
-        title: string;
-        description: string;
-        category: string;
-        impact: string;
-        confidenceScore: number;
-        sourceReviewIndices: number[];
-    }>;
-    actionItems: Array<{
-        title: string;
-        description: string;
-        priority: string;
-        relatedInsightIndex: number;
-    }>;
+interface SynthesizedInsight {
+    title: string;
+    description: string;
+    category: string;
+    impact: string;
+    confidenceScore: number;
+    supportingClaimIds: number[];
+    affectedCompetitors: string[];
+    suggestedAction: string;
 }
 
-function buildMegaPrompt(reviews: ReviewInput[]): string {
-    const reviewsJson = JSON.stringify(reviews, null, 1);
+interface BattlecardItem {
+    title: string;
+    description: string;
+    priority: string;
+    relatedInsightTitle: string;
+}
 
-    return `You are a competitive intelligence analyst for HR Tech SaaS companies.
+interface ExtractedCompetitor {
+    name: string;
+    mentionCount: number;
+    avgSentiment: number;
+    complaintThemes: string[];
+    praiseThemes: string[];
+}
 
-Analyze ALL of the following customer reviews and produce a COMPLETE analysis in a single JSON response.
+function validateCategory(cat: string): "feature_request" | "complaint" | "praise" | "churn_signal" {
+    const valid = ["feature_request", "complaint", "praise", "churn_signal"] as const;
+    if ((valid as readonly string[]).includes(cat)) return cat as typeof valid[number];
+    return "complaint";
+}
 
-## REVIEWS DATA:
-${reviewsJson}
+function validateInsightCategory(cat: string): string {
+    const valid = ["feature_gap", "churn_driver", "product_strength", "pricing_concern"];
+    if (valid.includes(cat)) return cat;
+    return "feature_gap";
+}
 
-## INSTRUCTIONS:
-Analyze every review above and produce the following:
+function validateLevel(val: string): "high" | "medium" | "low" {
+    const valid = ["high", "medium", "low"] as const;
+    if ((valid as readonly string[]).includes(val)) return val as typeof valid[number];
+    return "medium";
+}
 
-### 1. COMPETITORS
-Identify each unique product/company mentioned. For each competitor:
-- Count how many reviews mention them
-- Calculate average sentiment (-1.0 = very negative, 0 = neutral, +1.0 = very positive)
-- List 2-4 praise themes (what users love)
-- List 2-4 complaint themes (what users dislike)
-
-### 2. INSIGHTS
-Generate 5-10 actionable insights from patterns across reviews. Each insight must:
-- Have a clear, specific title
-- Have a detailed 1-2 sentence description
-- Be categorized as: "feature_gap", "churn_driver", "product_strength", or "pricing_concern"
-- Have impact rated as: "high", "medium", or "low"
-- Have a confidenceScore (0.0 to 1.0) based on how many reviews support it
-- Reference which reviews support it using their "index" values from the input
-
-### 3. ACTION ITEMS
-Generate 4-8 concrete action items based on the insights. Each must:
-- Have a specific, actionable title (start with a verb)
-- Have a detailed description of what to do
-- Be prioritized as: "high", "medium", or "low"
-- Reference which insight it relates to (by index in the insights array)
-
-## REQUIRED JSON FORMAT:
-{
-  "competitors": [
-    {
-      "name": "Product Name",
-      "mentionCount": 5,
-      "avgSentiment": 0.3,
-      "praiseThemes": ["Easy to use", "Good reporting"],
-      "complaintThemes": ["Slow support", "High pricing"]
+function getQuoteText(claim: { quoteText?: string }, reviewText: string): string {
+    if (claim.quoteText && claim.quoteText.trim().length > 0) {
+        return claim.quoteText;
     }
-  ],
-  "insights": [
-    {
-      "title": "Onboarding Complexity Drives Churn",
-      "description": "Multiple reviews across Workday and BambooHR mention...",
-      "category": "churn_driver",
-      "impact": "high",
-      "confidenceScore": 0.8,
-      "sourceReviewIndices": [0, 3, 7, 12]
-    }
-  ],
-  "actionItems": [
-    {
-      "title": "Build guided onboarding wizard",
-      "description": "Create a step-by-step onboarding flow...",
-      "priority": "high",
-      "relatedInsightIndex": 0
-    }
-  ]
+    console.warn(`[extraction] No quoteText for claim, using fallback from review`);
+    return reviewText.substring(0, 200) + (reviewText.length > 200 ? "..." : "");
 }
 
-Return ONLY valid JSON. No markdown, no explanation, just the JSON object.`;
+function safeJsonParse<T>(content: string, label: string): T {
+    try {
+        // Strip markdown code fences if present
+        let cleaned = content.trim();
+        if (cleaned.startsWith("```")) {
+            cleaned = cleaned.replace(/^```(?:json)?\s*/, "").replace(/\s*```$/, "");
+        }
+        return JSON.parse(cleaned);
+    } catch {
+        console.error(`[${label}] Failed to parse JSON response:`, content.substring(0, 500));
+        throw new Error(`Gemini returned invalid JSON in ${label} step. Please try again.`);
+    }
 }
 
-// ─── Store Results in Database ───────────────────────────────────────
+// ─── Clustering (code-based) ─────────────────────────────────────────
 
-async function storeAnalysisResults(
-    datasetId: string,
-    result: MegaAnalysisResult,
+const STOP_WORDS = new Set([
+    "the", "a", "an", "is", "are", "was", "were", "be", "been", "being",
+    "have", "has", "had", "do", "does", "did", "will", "would", "could",
+    "should", "may", "might", "can", "shall", "for", "and", "nor", "but",
+    "or", "yet", "so", "in", "on", "at", "to", "from", "by", "with", "of",
+    "about", "between", "through", "during", "before", "after", "above",
+    "below", "it", "its", "this", "that", "these", "those", "i", "we",
+    "they", "our", "their", "my", "your", "not", "no", "very", "too",
+    "also", "just", "more", "most", "much", "many", "some", "than", "then",
+    "when", "what", "which", "who", "how", "like", "need", "want", "good",
+    "well", "really", "there", "been", "only", "even", "still",
+]);
+
+function extractSignificantWords(text: string): string[] {
+    return text
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, "")
+        .split(/\s+/)
+        .filter((w) => w.length > 3 && !STOP_WORDS.has(w));
+}
+
+function generateThemeName(category: string, claims: ExtractedClaim[]): string {
+    const allWords = claims.flatMap((c) => extractSignificantWords(c.claimText));
+    const wordCounts = new Map<string, number>();
+    for (const word of allWords) {
+        wordCounts.set(word, (wordCounts.get(word) || 0) + 1);
+    }
+    const topWords = [...wordCounts.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([w]) => w);
+
+    const categoryLabel: Record<string, string> = {
+        feature_request: "Feature Request",
+        complaint: "Complaint",
+        praise: "Strength",
+        churn_signal: "Churn Risk",
+    };
+
+    return `${categoryLabel[category] || category}: ${topWords.join(", ")}`;
+}
+
+function clusterClaims(
+    claims: ExtractedClaim[],
+    reviewMap: Map<string, { platform: string; rating: number; reviewDate: string; productName: string }>
+): ClaimCluster[] {
+    // Group by category
+    const byCategory = new Map<string, ExtractedClaim[]>();
+    for (const claim of claims) {
+        const existing = byCategory.get(claim.category) || [];
+        existing.push(claim);
+        byCategory.set(claim.category, existing);
+    }
+
+    const clusters: ClaimCluster[] = [];
+
+    for (const [category, categoryClaims] of byCategory) {
+        const unclustered = new Set(categoryClaims.map((_, i) => i));
+
+        while (unclustered.size > 0) {
+            const seedIdx = unclustered.values().next().value!;
+            const seed = categoryClaims[seedIdx];
+            unclustered.delete(seedIdx);
+
+            const clusterMembers: ExtractedClaim[] = [seed];
+            const seedWords = extractSignificantWords(seed.claimText);
+
+            for (const idx of [...unclustered]) {
+                const candidate = categoryClaims[idx];
+                const candidateWords = extractSignificantWords(candidate.claimText);
+                const overlap = seedWords.filter((w) => candidateWords.includes(w));
+
+                if (overlap.length >= 1) {
+                    clusterMembers.push(candidate);
+                    unclustered.delete(idx);
+                }
+            }
+
+            const theme = generateThemeName(category, clusterMembers);
+
+            clusters.push({
+                theme,
+                claims: clusterMembers.map((c): ClaimForSynthesis => {
+                    const review = reviewMap.get(c.reviewId);
+                    return {
+                        claimText: c.claimText,
+                        category: c.category,
+                        quoteText: c.quoteText,
+                        confidence: c.confidence,
+                        reviewId: c.reviewId,
+                        platform: review?.platform || "",
+                        rating: review?.rating || 0,
+                        reviewDate: review?.reviewDate || "",
+                        productName: review?.productName || "",
+                    };
+                }),
+            });
+        }
+    }
+
+    return clusters;
+}
+
+// ─── Pipeline Steps ──────────────────────────────────────────────────
+
+const BATCH_SIZE = 20;
+
+async function runExtractionStep(
+    model: ReturnType<typeof getGeminiModel>,
     dbReviews: Array<{ id: string; reviewText: string; rating: number; platform: string; productName: string; reviewDate: string }>
-) {
-    console.log(`[store] Storing ${result.competitors.length} competitors, ${result.insights.length} insights, ${result.actionItems.length} action items`);
+): Promise<ExtractedClaim[]> {
+    const allClaims: ExtractedClaim[] = [];
+    const totalBatches = Math.ceil(dbReviews.length / BATCH_SIZE);
 
-    // Store competitors
-    for (const comp of result.competitors) {
-        await prisma.competitor.create({
-            data: {
-                datasetId,
-                name: comp.name || "Unknown",
-                mentionCount: comp.mentionCount || 1,
-                avgSentiment: comp.avgSentiment || 0,
-                complaintThemes: JSON.stringify(comp.complaintThemes || []),
-                praiseThemes: JSON.stringify(comp.praiseThemes || []),
-            },
-        });
+    for (let i = 0; i < dbReviews.length; i += BATCH_SIZE) {
+        const batch = dbReviews.slice(i, i + BATCH_SIZE);
+        const batchNum = Math.floor(i / BATCH_SIZE) + 1;
+
+        const reviewsForExtraction: ReviewForExtraction[] = batch.map((r) => ({
+            id: r.id,
+            reviewText: r.reviewText,
+            rating: r.rating,
+            platform: r.platform,
+            productName: r.productName,
+            reviewDate: r.reviewDate,
+        }));
+
+        const systemPrompt = getExtractionSystemPrompt();
+        const userPrompt = getExtractionUserPrompt(reviewsForExtraction);
+
+        let parsed: Array<{
+            reviewId?: string;
+            claimText?: string;
+            category?: string;
+            quoteText?: string;
+            confidence?: string;
+            competitorMentions?: string[];
+        }>;
+
+        // Try up to 2 times on parse failure
+        let attempts = 0;
+        while (true) {
+            attempts++;
+            try {
+                const result = await model.generateContent(systemPrompt + "\n\n" + userPrompt);
+                const content = result.response.text();
+                parsed = safeJsonParse(content, `extraction batch ${batchNum}`);
+                if (!Array.isArray(parsed)) parsed = [];
+                break;
+            } catch (err) {
+                if (attempts >= 2) throw err;
+                console.warn(`[extraction] Batch ${batchNum} parse failed, retrying...`);
+            }
+        }
+
+        const batchClaims: ExtractedClaim[] = parsed.map((claim) => {
+            const reviewId = claim.reviewId || batch[0]?.id || "";
+            const review = batch.find((r) => r.id === reviewId);
+            return {
+                reviewId,
+                claimText: claim.claimText || "",
+                category: validateCategory(claim.category || "complaint"),
+                quoteText: getQuoteText(claim, review?.reviewText || ""),
+                confidence: validateLevel(claim.confidence || "medium"),
+                competitorMentions: claim.competitorMentions || [],
+            };
+        }).filter((c) => c.claimText.length > 0);
+
+        allClaims.push(...batchClaims);
+        console.log(`[extraction] Batch ${batchNum}/${totalBatches}: ${batchClaims.length} claims extracted`);
     }
 
-    // Store insights with source quotes
-    const insightIds: string[] = [];
-    for (const insight of result.insights) {
-        const validCategories = ["feature_gap", "churn_driver", "product_strength", "pricing_concern"];
-        const category = validCategories.includes(insight.category) ? insight.category : "feature_gap";
-        const validImpacts = ["high", "medium", "low"];
-        const impact = validImpacts.includes(insight.impact) ? insight.impact : "medium";
+    return allClaims;
+}
 
+async function runSynthesisStep(
+    model: ReturnType<typeof getGeminiModel>,
+    clusters: ClaimCluster[]
+): Promise<SynthesizedInsight[]> {
+    const systemPrompt = getSynthesisSystemPrompt();
+    const userPrompt = getSynthesisUserPrompt(clusters);
+
+    const result = await model.generateContent(systemPrompt + "\n\n" + userPrompt);
+    const content = result.response.text();
+    const parsed = safeJsonParse<SynthesizedInsight[]>(content, "synthesis");
+
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed.map((insight) => ({
+        title: insight.title || "Untitled Insight",
+        description: insight.description || "",
+        category: validateInsightCategory(insight.category || "feature_gap"),
+        impact: validateLevel(insight.impact || "medium"),
+        confidenceScore: Math.max(0, Math.min(1, insight.confidenceScore ?? 0.5)),
+        supportingClaimIds: Array.isArray(insight.supportingClaimIds) ? insight.supportingClaimIds : [],
+        affectedCompetitors: Array.isArray(insight.affectedCompetitors) ? insight.affectedCompetitors : [],
+        suggestedAction: insight.suggestedAction || "",
+    }));
+}
+
+async function runBattlecardStep(
+    model: ReturnType<typeof getGeminiModel>,
+    insights: SynthesizedInsight[]
+): Promise<BattlecardItem[]> {
+    const systemPrompt = getBattlecardSystemPrompt();
+    const insightsForPrompt = insights.map((ins) => ({
+        title: ins.title,
+        description: ins.description,
+        category: ins.category,
+        impact: ins.impact,
+        supportingQuoteCount: ins.supportingClaimIds.length,
+    }));
+    const userPrompt = getBattlecardUserPrompt(insightsForPrompt);
+
+    const result = await model.generateContent(systemPrompt + "\n\n" + userPrompt);
+    const content = result.response.text();
+    const parsed = safeJsonParse<BattlecardItem[]>(content, "battlecard");
+
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed.map((item) => ({
+        title: item.title || "Action Item",
+        description: item.description || "",
+        priority: validateLevel(item.priority || "medium"),
+        relatedInsightTitle: item.relatedInsightTitle || "",
+    }));
+}
+
+async function runCompetitorExtractionStep(
+    model: ReturnType<typeof getGeminiModel>,
+    reviews: Array<{ productName: string; reviewText: string; rating: number }>
+): Promise<ExtractedCompetitor[]> {
+    const systemPrompt = getCompetitorExtractionSystemPrompt();
+    const userPrompt = getCompetitorExtractionUserPrompt(reviews);
+
+    const result = await model.generateContent(systemPrompt + "\n\n" + userPrompt);
+    const content = result.response.text();
+    const parsed = safeJsonParse<ExtractedCompetitor[]>(content, "competitor extraction");
+
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed.map((comp) => ({
+        name: comp.name || "Unknown",
+        mentionCount: comp.mentionCount || 1,
+        avgSentiment: comp.avgSentiment || 0,
+        complaintThemes: Array.isArray(comp.complaintThemes) ? comp.complaintThemes : [],
+        praiseThemes: Array.isArray(comp.praiseThemes) ? comp.praiseThemes : [],
+    }));
+}
+
+// ─── Evidence Rules (No Quote, No Claim) ─────────────────────────────
+
+function applyEvidenceRules(
+    insights: SynthesizedInsight[],
+    totalClaimCount: number
+): SynthesizedInsight[] {
+    return insights
+        .filter((insight) => {
+            const validClaims = insight.supportingClaimIds.filter(
+                (idx) => idx >= 0 && idx < totalClaimCount
+            );
+            if (validClaims.length === 0) {
+                console.warn(`[evidence-rules] Dropping insight "${insight.title}": no supporting claims`);
+                return false;
+            }
+            return true;
+        })
+        .map((insight) => {
+            const validClaims = insight.supportingClaimIds.filter(
+                (idx) => idx >= 0 && idx < totalClaimCount
+            );
+            if (validClaims.length === 1) {
+                return {
+                    ...insight,
+                    confidenceScore: Math.min(insight.confidenceScore, 0.3),
+                    category: insight.category.includes("_low_evidence")
+                        ? insight.category
+                        : insight.category + "_low_evidence",
+                    supportingClaimIds: validClaims,
+                };
+            }
+            return { ...insight, supportingClaimIds: validClaims };
+        });
+}
+
+// ─── Storage Functions ───────────────────────────────────────────────
+
+async function storeExtractionResults(
+    datasetId: string,
+    claims: ExtractedClaim[],
+    reviewTextMap: Map<string, string>
+): Promise<Map<string, string>> {
+    // Bulk insert claims
+    await prisma.claim.createMany({
+        data: claims.map((claim) => ({
+            datasetId,
+            reviewId: claim.reviewId,
+            claimText: claim.claimText,
+            category: claim.category,
+            quoteText: getQuoteText(claim, reviewTextMap.get(claim.reviewId) || ""),
+            confidence: claim.confidence,
+        })),
+    });
+
+    // Fetch back to get IDs for linking
+    const dbClaims = await prisma.claim.findMany({
+        where: { datasetId },
+        select: { id: true, reviewId: true, claimText: true },
+    });
+
+    const claimIdMap = new Map<string, string>();
+    for (const c of dbClaims) {
+        claimIdMap.set(`${c.reviewId}|${c.claimText}`, c.id);
+    }
+
+    return claimIdMap;
+}
+
+async function storeInsightsAndLinks(
+    datasetId: string,
+    insights: SynthesizedInsight[],
+    allClaims: ExtractedClaim[],
+    claimIdMap: Map<string, string>
+): Promise<{ insightIds: string[]; insightTitles: string[] }> {
+    const insightIds: string[] = [];
+    const insightTitles: string[] = [];
+
+    for (const insight of insights) {
         const theme = await prisma.insightTheme.create({
             data: {
                 datasetId,
-                title: insight.title || "Untitled Insight",
-                description: insight.description || "",
-                category,
-                impact,
-                confidenceScore: Math.max(0, Math.min(1, insight.confidenceScore ?? 0.5)),
+                title: insight.title,
+                description: insight.description,
+                category: insight.category,
+                impact: validateLevel(insight.impact),
+                confidenceScore: insight.confidenceScore,
             },
         });
         insightIds.push(theme.id);
+        insightTitles.push(insight.title);
 
-        // Link source reviews
-        if (insight.sourceReviewIndices && insight.sourceReviewIndices.length > 0) {
-            for (const reviewIdx of insight.sourceReviewIndices) {
-                if (reviewIdx >= 0 && reviewIdx < dbReviews.length) {
-                    const review = dbReviews[reviewIdx];
-                    // Create a claim for the source quote
-                    const claim = await prisma.claim.create({
-                        data: {
-                            datasetId,
-                            reviewId: review.id,
-                            claimText: insight.title,
-                            category,
-                            quoteText: review.reviewText.substring(0, 500),
-                            confidence: insight.confidenceScore > 0.7 ? "high" : insight.confidenceScore > 0.4 ? "medium" : "low",
-                        },
-                    });
+        // Link supporting claims via InsightSourceQuote
+        for (const claimIdx of insight.supportingClaimIds) {
+            if (claimIdx >= 0 && claimIdx < allClaims.length) {
+                const claim = allClaims[claimIdx];
+                const claimId = claimIdMap.get(`${claim.reviewId}|${claim.claimText}`);
+                if (claimId) {
                     await prisma.insightSourceQuote.create({
                         data: {
                             insightThemeId: theme.id,
-                            claimId: claim.id,
-                            reviewId: review.id,
+                            claimId,
+                            reviewId: claim.reviewId,
                         },
                     });
                 }
@@ -336,30 +611,49 @@ async function storeAnalysisResults(
         }
     }
 
-    // Store action items
-    for (const item of result.actionItems) {
-        const validPriorities = ["high", "medium", "low"];
-        const priority = validPriorities.includes(item.priority) ? item.priority : "medium";
-
-        // Link to related insight
-        const insightId = (item.relatedInsightIndex >= 0 && item.relatedInsightIndex < insightIds.length)
-            ? insightIds[item.relatedInsightIndex]
-            : null;
-
-        await prisma.actionItem.create({
-            data: {
-                datasetId,
-                insightThemeId: insightId,
-                title: item.title || "Action Item",
-                description: item.description || "",
-                priority,
-                status: "not_started",
-            },
-        });
-    }
+    return { insightIds, insightTitles };
 }
 
-// ─── Full Pipeline (Single API Call) ─────────────────────────────────
+async function storeCompetitors(
+    datasetId: string,
+    competitors: ExtractedCompetitor[]
+): Promise<void> {
+    await prisma.competitor.createMany({
+        data: competitors.map((comp) => ({
+            datasetId,
+            name: comp.name,
+            mentionCount: comp.mentionCount,
+            avgSentiment: comp.avgSentiment,
+            complaintThemes: JSON.stringify(comp.complaintThemes),
+            praiseThemes: JSON.stringify(comp.praiseThemes),
+        })),
+    });
+}
+
+async function storeActionItems(
+    datasetId: string,
+    battlecardItems: BattlecardItem[],
+    insightIds: string[],
+    insightTitles: string[]
+): Promise<void> {
+    await prisma.actionItem.createMany({
+        data: battlecardItems.map((item) => {
+            const insightIdx = insightTitles.findIndex(
+                (t) => t.toLowerCase() === item.relatedInsightTitle.toLowerCase()
+            );
+            return {
+                datasetId,
+                insightThemeId: insightIdx >= 0 ? insightIds[insightIdx] : null,
+                title: item.title,
+                description: item.description,
+                priority: validateLevel(item.priority),
+                status: "not_started",
+            };
+        }),
+    });
+}
+
+// ─── Full Pipeline (Multi-Step) ──────────────────────────────────────
 
 export async function runFullPipeline(datasetId: string): Promise<{
     insightCount: number;
@@ -367,73 +661,108 @@ export async function runFullPipeline(datasetId: string): Promise<{
     actionItemCount: number;
 }> {
     try {
+        // ── Step 1: Extraction ──
         await prisma.dataset.update({
             where: { id: datasetId },
-            data: { status: "analyzing" },
+            data: { status: "extracting" },
         });
 
         const reviews = await prisma.review.findMany({
             where: { datasetId },
         });
 
-        console.log(`[pipeline] Starting analysis for dataset ${datasetId} with ${reviews.length} reviews`);
-
         if (reviews.length === 0) {
             throw new Error("No reviews found for this dataset.");
         }
 
-        // Build review inputs for the mega-prompt
-        const reviewInputs: ReviewInput[] = reviews.map((r, i) => ({
-            index: i,
-            text: r.reviewText,
-            rating: r.rating,
-            platform: r.platform,
-            product: r.productName,
-            date: r.reviewDate,
-            reviewer: r.reviewerName,
-            role: r.reviewerRole,
-        }));
-
-        // ONE single API call
-        console.log("[pipeline] Sending single mega-prompt to Gemini...");
         const model = getGeminiModel();
-        const prompt = buildMegaPrompt(reviewInputs);
-        const result = await model.generateContent(prompt);
-        const content = result.response.text();
 
-        if (!content) {
-            throw new Error("Gemini returned an empty response.");
-        }
+        console.log(`[pipeline] Step 1: Extracting claims from ${reviews.length} reviews...`);
+        const extractedClaims = await runExtractionStep(
+            model,
+            reviews.map((r) => ({
+                id: r.id,
+                reviewText: r.reviewText,
+                rating: r.rating,
+                platform: r.platform,
+                productName: r.productName,
+                reviewDate: r.reviewDate,
+            }))
+        );
+        console.log(`[pipeline] Step 1 complete: ${extractedClaims.length} claims extracted`);
 
-        console.log(`[pipeline] Gemini response received (${content.length} chars)`);
+        // Build review text map for fallback quotes
+        const reviewTextMap = new Map(reviews.map((r) => [r.id, r.reviewText]));
 
-        // Parse the JSON response
-        let analysisResult: MegaAnalysisResult;
-        try {
-            const parsed = JSON.parse(content);
-            analysisResult = {
-                competitors: parsed.competitors ?? [],
-                insights: parsed.insights ?? [],
-                actionItems: parsed.actionItems ?? parsed.actions ?? [],
-            };
-        } catch (parseErr) {
-            console.error("[pipeline] Failed to parse Gemini response:", content.substring(0, 500));
-            throw new Error("Gemini returned invalid JSON. Please try again.");
-        }
+        // Store claims in DB
+        const claimIdMap = await storeExtractionResults(datasetId, extractedClaims, reviewTextMap);
 
-        console.log(`[pipeline] Parsed: ${analysisResult.competitors.length} competitors, ${analysisResult.insights.length} insights, ${analysisResult.actionItems.length} action items`);
+        // ── Step 2: Clustering ──
+        await prisma.dataset.update({
+            where: { id: datasetId },
+            data: { status: "clustering" },
+        });
 
-        // Store everything in the database
-        await storeAnalysisResults(datasetId, analysisResult, reviews.map(r => ({
-            id: r.id,
-            reviewText: r.reviewText,
-            rating: r.rating,
-            platform: r.platform,
-            productName: r.productName,
-            reviewDate: r.reviewDate,
-        })));
+        console.log(`[pipeline] Step 2: Clustering ${extractedClaims.length} claims...`);
 
-        // Update status
+        const reviewMap = new Map(
+            reviews.map((r) => [
+                r.id,
+                { platform: r.platform, rating: r.rating, reviewDate: r.reviewDate, productName: r.productName },
+            ])
+        );
+
+        const clusters = clusterClaims(extractedClaims, reviewMap);
+        console.log(`[pipeline] Step 2 complete: ${clusters.length} clusters formed`);
+
+        // ── Step 3: Synthesis ──
+        await prisma.dataset.update({
+            where: { id: datasetId },
+            data: { status: "synthesizing" },
+        });
+
+        console.log(`[pipeline] Step 3: Synthesizing insights from ${clusters.length} clusters...`);
+        const rawInsights = await runSynthesisStep(model, clusters);
+
+        // Apply evidence rules
+        const filteredInsights = applyEvidenceRules(rawInsights, extractedClaims.length);
+        console.log(`[pipeline] Step 3 complete: ${filteredInsights.length} insights (${rawInsights.length - filteredInsights.length} dropped for insufficient evidence)`);
+
+        // Store insights and link source quotes
+        const { insightIds, insightTitles } = await storeInsightsAndLinks(
+            datasetId,
+            filteredInsights,
+            extractedClaims,
+            claimIdMap
+        );
+
+        // ── Step 4: Battlecard Generation ──
+        await prisma.dataset.update({
+            where: { id: datasetId },
+            data: { status: "generating_battlecards" },
+        });
+
+        console.log(`[pipeline] Step 4: Generating battlecard action items...`);
+        const battlecardItems = await runBattlecardStep(model, filteredInsights);
+        console.log(`[pipeline] Step 4 complete: ${battlecardItems.length} action items generated`);
+
+        await storeActionItems(datasetId, battlecardItems, insightIds, insightTitles);
+
+        // ── Step 5: Competitor Extraction ──
+        console.log(`[pipeline] Step 5: Extracting competitor intelligence...`);
+        const competitorData = await runCompetitorExtractionStep(
+            model,
+            reviews.map((r) => ({
+                productName: r.productName,
+                reviewText: r.reviewText,
+                rating: r.rating,
+            }))
+        );
+        console.log(`[pipeline] Step 5 complete: ${competitorData.length} competitors extracted`);
+
+        await storeCompetitors(datasetId, competitorData);
+
+        // ── Complete ──
         await prisma.dataset.update({
             where: { id: datasetId },
             data: { status: "complete" },
@@ -443,11 +772,11 @@ export async function runFullPipeline(datasetId: string): Promise<{
         const competitorCount = await prisma.competitor.count({ where: { datasetId } });
         const actionItemCount = await prisma.actionItem.count({ where: { datasetId } });
 
-        console.log(`[pipeline] ✅ Complete: ${insightCount} insights, ${competitorCount} competitors, ${actionItemCount} action items`);
+        console.log(`[pipeline] Complete: ${insightCount} insights, ${competitorCount} competitors, ${actionItemCount} action items`);
 
         return { insightCount, competitorCount, actionItemCount };
     } catch (err) {
-        console.error("[pipeline] ❌ Error:", err);
+        console.error("[pipeline] Error:", err);
         await prisma.dataset.update({
             where: { id: datasetId },
             data: {

@@ -148,14 +148,18 @@ function generatePDFExport(
 
         doc.setFontSize(11);
         doc.setFont("helvetica", "bold");
-        const confidenceLabel =
-            insight.sourceQuotes.length >= 5
-                ? "High"
+        const isLowEvidence =
+            (insight.sourceQuotes.length <= 1 && insight.confidenceScore <= 0.4) ||
+            insight.category.includes("_low_evidence");
+        const confidenceLabel = isLowEvidence
+            ? "Low Evidence"
+            : insight.sourceQuotes.length >= 5
+                ? "High Confidence"
                 : insight.sourceQuotes.length >= 2
-                    ? "Medium"
-                    : "Low";
+                    ? "Medium Confidence"
+                    : "Low Confidence";
         doc.text(
-            `${insight.title} [${confidenceLabel} Confidence — ${insight.sourceQuotes.length} sources]`,
+            `${insight.title} [${confidenceLabel} — ${insight.sourceQuotes.length} source${insight.sourceQuotes.length !== 1 ? "s" : ""}]`,
             margin,
             y
         );

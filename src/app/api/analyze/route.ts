@@ -37,8 +37,9 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        if (dataset.status === "analyzing") {
-            console.log("[analyze] REJECTED: already analyzing");
+        const inProgressStatuses = ["extracting", "clustering", "synthesizing", "generating_battlecards"];
+        if (inProgressStatuses.includes(dataset.status)) {
+            console.log("[analyze] REJECTED: already analyzing, status:", dataset.status);
             return NextResponse.json(
                 { error: "Analysis is already in progress." },
                 { status: 409 }
@@ -84,7 +85,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
             {
                 error: isRateLimit
-                    ? "OpenAI rate limit exceeded. Please wait a moment and try again."
+                    ? "Gemini rate limit exceeded. Please wait a moment and try again."
                     : errorMessage,
             },
             { status: isRateLimit ? 429 : 500 }

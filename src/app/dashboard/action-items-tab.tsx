@@ -26,7 +26,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppStore } from "@/lib/store";
 import type { ActionItem, SourceQuote } from "@/lib/data";
-import { CATEGORY_LABELS, CONFIDENCE_LABEL, CONFIDENCE_VARIANT } from "@/lib/data";
+import { CATEGORY_LABELS, CONFIDENCE_LABEL, CONFIDENCE_VARIANT, isLowEvidence } from "@/lib/data";
 
 type Priority = ActionItem["priority"];
 type Status = ActionItem["status"];
@@ -119,18 +119,23 @@ function ActionItemCard({ item }: { item: ActionItem }) {
           {item.insightCategory && (
             <span
               className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${item.insightCategory === "feature_gap"
-                  ? "text-blue-600 bg-blue-50 dark:bg-blue-950/30"
-                  : item.insightCategory === "churn_driver"
-                    ? "text-red-600 bg-red-50 dark:bg-red-950/30"
-                    : item.insightCategory === "product_strength"
-                      ? "text-green-600 bg-green-50 dark:bg-green-950/30"
-                      : "text-amber-600 bg-amber-50 dark:bg-amber-950/30"
+                ? "text-blue-600 bg-blue-50 dark:bg-blue-950/30"
+                : item.insightCategory === "churn_driver"
+                  ? "text-red-600 bg-red-50 dark:bg-red-950/30"
+                  : item.insightCategory === "product_strength"
+                    ? "text-green-600 bg-green-50 dark:bg-green-950/30"
+                    : "text-amber-600 bg-amber-50 dark:bg-amber-950/30"
                 }`}
             >
               {CATEGORY_LABELS[item.insightCategory] ?? item.insightCategory}
             </span>
           )}
-          <Badge variant={CONFIDENCE_VARIANT(item.sourceQuotes.length)} className="ml-auto text-xs">
+          {isLowEvidence(item.confidenceScore, item.sourceQuotes.length, item.insightCategory ?? undefined) && (
+            <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 border border-amber-200">
+              Low Evidence
+            </span>
+          )}
+          <Badge variant={CONFIDENCE_VARIANT(item.sourceQuotes.length, item.confidenceScore)} className="ml-auto text-xs">
             {CONFIDENCE_LABEL(item.confidenceScore, item.sourceQuotes.length)}
           </Badge>
         </div>
@@ -280,6 +285,17 @@ export function ActionItemsTab() {
   const inProgress = actionItems.filter((i) => i.status === "in_progress").length;
   const done = actionItems.filter((i) => i.status === "complete").length;
 
+  // Sort low-evidence items to the bottom
+  const sortedItems = useMemo(() => {
+    return [...actionItems].sort((a, b) => {
+      const aLow = isLowEvidence(a.confidenceScore, a.sourceQuotes.length, a.insightCategory ?? undefined);
+      const bLow = isLowEvidence(b.confidenceScore, b.sourceQuotes.length, b.insightCategory ?? undefined);
+      if (aLow && !bLow) return 1;
+      if (!aLow && bLow) return -1;
+      return 0;
+    });
+  }, [actionItems]);
+
   if (actionItems.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
@@ -312,7 +328,7 @@ export function ActionItemsTab() {
       </div>
 
       <div className="space-y-4">
-        {actionItems.map((item) => (
+        {sortedItems.map((item) => (
           <ActionItemCard key={item.id} item={item} />
         ))}
       </div>

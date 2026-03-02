@@ -9,7 +9,6 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -17,28 +16,26 @@ import {
     Save,
     CheckCircle2,
     Trash2,
-    Eye,
-    EyeOff,
     AlertTriangle,
+    Loader2,
 } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 
 const SETTINGS_KEY = "reviewintel_settings";
 
 interface AppSettings {
-    openaiKey: string;
     exportFormat: "pdf" | "csv";
 }
 
 function loadSettings(): AppSettings {
     if (typeof window === "undefined")
-        return { openaiKey: "", exportFormat: "pdf" };
+        return { exportFormat: "pdf" };
     try {
         const raw = localStorage.getItem(SETTINGS_KEY);
-        if (!raw) return { openaiKey: "", exportFormat: "pdf" };
+        if (!raw) return { exportFormat: "pdf" };
         return JSON.parse(raw);
     } catch {
-        return { openaiKey: "", exportFormat: "pdf" };
+        return { exportFormat: "pdf" };
     }
 }
 
@@ -50,14 +47,17 @@ function saveSettings(settings: AppSettings) {
 export default function SettingsPage() {
     const { signOut, datasetId, reviewCount, competitors } = useAppStore();
     const [settings, setSettings] = useState<AppSettings>({
-        openaiKey: "",
         exportFormat: "pdf",
     });
-    const [showKey, setShowKey] = useState(false);
     const [saved, setSaved] = useState(false);
+    const [geminiConfigured, setGeminiConfigured] = useState<boolean | null>(null);
 
     useEffect(() => {
         setSettings(loadSettings());
+        fetch("/api/config/status")
+            .then((res) => res.json())
+            .then((data) => setGeminiConfigured(data.geminiKeyConfigured))
+            .catch(() => setGeminiConfigured(false));
     }, []);
 
     const handleSave = () => {
@@ -75,7 +75,7 @@ export default function SettingsPage() {
                 </p>
             </div>
 
-            {/* API Key */}
+            {/* API Key Status */}
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-base">
@@ -83,41 +83,38 @@ export default function SettingsPage() {
                         Gemini API Key
                     </CardTitle>
                     <CardDescription>
-                        Your Google Gemini API key is stored locally and used for review
-                        analysis. The server-side key in .env.local takes priority.
+                        The Gemini API key is configured server-side via environment variables.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="flex gap-2">
-                        <div className="relative flex-1">
-                            <Input
-                                type={showKey ? "text" : "password"}
-                                placeholder="AIza..."
-                                value={settings.openaiKey}
-                                onChange={(e) =>
-                                    setSettings({ ...settings, openaiKey: e.target.value })
-                                }
-                                className="pr-10"
-                            />
-                            <button
-                                type="button"
-                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                                onClick={() => setShowKey(!showKey)}
-                            >
-                                {showKey ? (
-                                    <EyeOff className="h-4 w-4" />
-                                ) : (
-                                    <Eye className="h-4 w-4" />
-                                )}
-                            </button>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-400">
-                        <AlertTriangle className="h-4 w-4 shrink-0" />
-                        <span>
-                            Your API key is stored in localStorage only. It is never sent to
-                            any third-party server.
-                        </span>
+                <CardContent>
+                    <div className="flex items-center gap-3 rounded-lg border p-3">
+                        {geminiConfigured === null ? (
+                            <>
+                                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground shrink-0" />
+                                <span className="text-sm text-muted-foreground">
+                                    Checking configuration...
+                                </span>
+                            </>
+                        ) : geminiConfigured ? (
+                            <>
+                                <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0" />
+                                <span className="text-sm font-medium text-green-700 dark:text-green-400">
+                                    Gemini API key is configured
+                                </span>
+                            </>
+                        ) : (
+                            <>
+                                <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />
+                                <div className="space-y-1">
+                                    <span className="text-sm font-medium text-amber-700 dark:text-amber-400">
+                                        Gemini API key is not configured
+                                    </span>
+                                    <p className="text-xs text-muted-foreground">
+                                        Set <code className="rounded bg-muted px-1 py-0.5">GEMINI_API_KEY</code> in your <code className="rounded bg-muted px-1 py-0.5">.env.local</code> file and restart the server.
+                                    </p>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </CardContent>
             </Card>
